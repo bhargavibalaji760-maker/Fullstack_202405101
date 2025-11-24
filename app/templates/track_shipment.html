@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-center mt-4">
+  <div class="card card-custom shadow-lg p-4" style="max-width: 950px; width: 100%;">
+
+    <h3 class="fw-bold mb-3 text-center">
+      Track Your Shipment
+    </h3>
+
+    <!-- Search Form -->
+    <form method="post" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="shipment_id"
+                   placeholder="Enter Shipment ID" required>
+            <button class="btn text-white px-4" 
+                    type="submit"
+                    style="background:#2c3e50; border:none;">
+               Track
+            </button>
+        </div>
+    </form>
+
+    <!-- Error Message -->
+    {% if error %}
+    <div class="alert alert-danger mt-3">
+        {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Search Result -->
+    {% if result %}
+    <div class="glass-card p-4 mt-4 rounded">
+
+        <h5 class="fw-bold mb-3">Shipment Details</h5>
+
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Shipment ID:</strong> {{ result.shipment_id }}</p>
+                <p><strong>Sender:</strong> {{ result.sender_name }}</p>
+                <p><strong>Receiver:</strong> {{ result.receiver_name }}</p>
+            </div>
+
+            <div class="col-md-6">
+                <p><strong>Destination:</strong> {{ result.destination }}</p>
+
+                <p><strong>Status:</strong>
+                    {% if result.status == "Pending" %}
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    {% elif result.status == "In Transit" %}
+                        <span class="badge bg-info text-dark">In Transit</span>
+                    {% elif result.status == "Delivered" %}
+                        <span class="badge bg-success">Delivered</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ result.status }}</span>
+                    {% endif %}
+                </p>
+
+                <p><strong>Weight:</strong> {{ result.weight }} kg</p>
+            </div>
+        </div>
+
+        <p class="mt-2"><strong>Created At:</strong> {{ result.created_at }}</p>
+
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{% endblock %}

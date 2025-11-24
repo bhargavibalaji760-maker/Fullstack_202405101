@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCMLite - Login</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- SCMLite auth Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', path='style/login.css') }}">
+</head>
+
+<body>
+
+<div class="login-container">
+
+    <!-- LEFT PANEL -->
+    <div class="left-panel">
+        <h2 class="text-4xl font-extrabold mb-4">Welcome to SCMLite</h2>
+        <p class="opacity-80 mb-6">
+            Manage logistics, shipments & IoT data — all in one place.
+        </p>
+
+        <a href="/signup">
+            <button class="bg-green-500 hover:bg-green-600 transition px-6 py-3 rounded-lg font-semibold">
+                Create Account
+            </button>
+        </a>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel">
+
+        <h2>SCMLite</h2>
+
+        {% if flash %}
+        <div class="flash">{{ flash }}</div>
+        {% endif %}
+
+        <!-- USER FORM ONLY -->
+        <form method="POST" action="/" class="flex flex-col gap-5">
+            <input type="email" name="email" placeholder="Email Address" class="input-field" required>
+            <input type="password" name="password" placeholder="Password" class="input-field" required>
+            <button class="submit-btn">Login</button>
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>
