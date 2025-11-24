@@ -1,0 +1,147 @@
+version: "3.9"
+
+services:
+
+  # ---------------- ZOOKEEPER ----------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.1
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "22181:2181"
+    networks:
+      - fullstack_net
+    restart: unless-stopped
+
+
+  # ---------------- KAFKA ----------------
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "29092:9092"
+    networks:
+      - fullstack_net
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+
+  # ---------------- MONGO ----------------
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - fullstack_net
+    restart: unless-stopped
+
+
+  # ---------------- FASTAPI SERVER ----------------
+  server:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: server
+    env_file:
+      - .env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    networks:
+      - fullstack_net
+    restart: on-failure
+
+
+  # ---------------- SOCKET SERVER ----------------
+  socket-server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.socket
+    container_name: socket_server
+    env_file:
+      - .env
+    ports:
+      - "10000:9999"      # ✅ FIXED PORT
+    depends_on:
+      - server
+    networks:
+      - fullstack_net
+    restart: on-failure
+
+
+  # ---------------- KAFKA PRODUCER ----------------
+  kafka_producer:
+    build:
+      context: ./producer
+      dockerfile: Dockerfile
+    container_name: kafka_producer
+    env_file:
+      - .env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      socket-server:
+        condition: service_started
+    networks:
+      - fullstack_net
+    restart: on-failure
+
+
+  # ---------------- KAFKA CONSUMER ----------------
+  kafka_consumer:
+    build:
+      context: ./consumer
+      dockerfile: Dockerfile
+    container_name: kafka_consumer
+    env_file:
+      - .env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      mongo:
+        condition: service_started
+    networks:
+      - fullstack_net
+    restart: always
+
+
+  # ---------------- KAFKA INIT ----------------
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.1
+    container_name: kafka_init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "/kafka-init.sh"]
+    volumes:
+      - ./kafka-init.sh:/kafka-init.sh
+    networks:
+      - fullstack_net
+    restart: "no"
+
+
+volumes:
+  mongo-data:
+
+networks:
+  fullstack_net:
+    driver: bridge
